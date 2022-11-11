@@ -60,27 +60,6 @@ def get_generic_args():
     
     return parser
 
-def get_eval_metric_frm_conf_mat(conf_mat):
-
-    if( conf_mat.shape != (2, 2) ):
-        return {}
-
-    TP = conf_mat[0][0]
-    TN = conf_mat[1][1]
-    FP = conf_mat[0][1]
-    FN = conf_mat[1][0]
-    
-    precision = TP/(TP+FP) if TP + FP != 0 else 0
-    recall = TP/(TP+FN) if TP + FN != 0 else 0
-    f1 = 2*((precision * recall)/(precision + recall)) if precision + recall != 0 else 0
-    
-    return {
-        'precision': precision,
-        'recall': recall,
-        'f1-score': f1,
-        'support': TP + TN + FP + FN
-    }
-
 def get_bloc_for_tweets(tweets_files, tweets_path, gen_bloc_params, **kwargs):
 
     def get_user_id_class_map(f):
@@ -216,6 +195,8 @@ def run_tasks(bloc_collection, args):
 
         sim_vals = [s['sim'] for s in user_change_report['self_sim']['action']]
         print(user_bloc['class'], user_bloc['src'], '{:.2f}'.format(sum(sim_vals)/len(sim_vals)) )
+        print('DO SOME ANALYSIS HERE')
+        break
 
 
 def rename_cols(all_datasets, src_map):

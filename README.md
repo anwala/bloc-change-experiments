@@ -19,4 +19,4 @@ $ bloc change -o change_report.jsonl --token-pattern=word -m 8 --no-sort-action-
 $ python bloc_change.py --bc-keep-bloc-segments --add-pauses --bloc-model=word --tweets-path=../datasets --task evaluate rtbust
 ```
 
-To run analysis, modify `bloc_change.py::run_tasks()`
+To run analysis, modify [`bloc_change.py::run_tasks()`](https://github.com/anwala/bloc-change-experiments/blob/a22bd453563db0fa37b755f31b4e4aaeee0a87f0/scripts/bloc_change.py#L167)

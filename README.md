@@ -9,8 +9,13 @@
 
 ### Task 1: Run change analysis on groups of accounts from command line
 
-```
+```bash
 $ bloc change -o change_report.jsonl --token-pattern=word -m 8 --no-sort-action-words --bloc-alphabets action --bearer-token="$BEARER_TOKEN" OSoMe_IU acnwala
+```
+
+Also try this:
+```bash
+$ bloc change --timeline-startdate="2022-11-13 23:59:59" --change-mean=0.7 --change-stddev=0.3 --token-pattern=word -m 8 --no-sort-action-words --bloc-alphabets action --bearer-token="$BEARER_TOKEN" jesus
 ```
 
 ### Task 2: Run change analysis on groups of tweets

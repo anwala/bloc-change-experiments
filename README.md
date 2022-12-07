@@ -15,7 +15,6 @@
 Consider the BLOC action strings for `@jesus` generated from tweets posted by the account between December 8, 2009 and November 11, 2022. Recall that strings generated within the same week are separated by vertical bars `|`:
 ```
 T | ⚃T | ⚄T | ⚂T⚂T⚁T⚁T⚁T⚂T | ⚃T | ⚂T⚂T | ⚃T⚂T | ⚂T | ⚃T | ⚃T⚂T | ⚃T | ⚃T | ⚃T | ⚃T | ⚃T | 
-...
 ⚂T | ⚂T | ⚄T | ⚃T | ⚃T | ⚂T | ⚃T | ⚃T⚁T | ⚃T | ⚃T | ⚃T⚂T | ⚂T | ⚄T | ⚂T | ⚃T | ⚃T⚂T | ⚄T 
 | ⚃T | ⚃T⚁T | ⚂T | ⚄T⚂T | ⚃T | ⚃p | ⚃T | ⚃T | ⚃T | ⚃T | ⚂T□T□T⚁T | ⚃T | ⚄T | ⚄T⚂T⚁π | ⚃T 
 | ⚃T | ⚄T | ⚃T | ⚃T | ⚄T | ⚄T | ⚁p□p⚂T⚂p⚀T⚀p⚀p⚀p⚀p⚁p⚀p⚁p□p⚀p□p⚁T⚁T⚀p⚀p□T⚁T⚁T
@@ -28,11 +27,16 @@ Upon inspection, we observe that `@jesus`' actions mostly involve tweeting (`T`)
 
 Consider the BLOC action strings for `@storygraphbot` generated from tweets posted by the account between November 6, 2018 and May 10, 2021.
 ```
-⚄Tπππππππππππ | Tππππ⚂T⚁p⚀π⚁p | ⚄T | ⚃r | ⚄T | ⚄r | ⚄T | ⚂r | ⚄T⚁p | ⚂r⚂r | ⚃r | ⚃rT | ⚄r⚀T | ⚄p⚂T | ⚄T⚂π | ⚃r⚂r | ⚂Tπππ⚁r | ⚃r | ⚃r | ⚄p | ⚃r | ⚄r□p | ⚂r | ⚄rr | ⚄TππππππTπππππππππππππ□TππππππππππππππππππππππππππππππππππππππππππππππππππππππππππTππππππππ⚁TπππππππππππππππππππππππππππππππππTTπππππππππππ⚁T | ⚁π⚀π⚁π⚀π⚁π⚁π⚁π⚁Tππ⚀π⚀π⚁π⚁π⚀π⚁Tππππ⚁π⚀π⚁T⚀π⚁π⚁T⚀π⚁π⚁T⚀π⚁π⚀π⚁π⚁π⚁T⚀π⚀π⚁π⚀π⚁π⚁π⚀Tπ⚀π⚁π⚂T⚁π⚀π⚁π⚂T⚁π⚀π⚁π⚁π | ⚁T⚁π⚁Tπππππππππ
+⚄Tπππππππππππ | Tππππ⚂T⚁p⚀π⚁p | ⚄T | ⚃r | ⚄T | ⚄r | ⚄T | ⚂r | ⚄T⚁p | ⚂r⚂r | ⚃r | ⚃rT | 
+⚄r⚀T | ⚄p⚂T | ⚄T⚂π | ⚃r⚂r | ⚂Tπππ⚁r | ⚃r | ⚃r | ⚄p | ⚃r | ⚄r□p | ⚂r | ⚄rr | ⚄TππππππTπππππ
+ππππππππ□TππππππππππππππππππππππππππππππππππππππππππππππππππππππππππTππππππππ⚁Tπππππππππππ
+ππππππππππππππππππππππTTπππππππππππ⚁T | ⚁π⚀π⚁π⚀π⚁π⚁π⚁π⚁Tππ⚀π⚀π⚁π⚁π⚀π⚁Tππππ⚁π⚀π⚁T⚀π⚁π⚁T⚀π⚁π
+⚁T⚀π⚁π⚀π⚁π⚁π⚁T⚀π⚀π⚁π⚀π⚁π⚁π⚀Tπ⚀π⚁π⚂T⚁π⚀π⚁π⚂T⚁π⚀π⚁π⚁π | ⚁T⚁π⚁Tπππππππππ
 ```
 Upon further inspection of `@storygraphbot`'s BLOC string, we can observe strings generated when the human controlled the account,
 ```
-⚄Tπππππππππππ | Tππππ⚂T⚁p⚀π⚁p | ⚄T | ⚃r | ⚄T | ⚄r | ⚄T | ⚂r | ⚄T⚁p | ⚂r⚂r | ⚃r | ⚃rT | ⚄r⚀T | ⚄p⚂T | ⚄T⚂π | ⚃r⚂r | ⚂Tπππ⚁r | ⚃r | ⚃r | ⚄p | ⚃r | ⚄r□p | ⚂r | ⚄rr 
+⚄Tπππππππππππ | Tππππ⚂T⚁p⚀π⚁p | ⚄T | ⚃r | ⚄T | ⚄r | ⚄T | ⚂r | ⚄T⚁p | ⚂r⚂r | ⚃r | ⚃rT | 
+⚄r⚀T | ⚄p⚂T | ⚄T⚂π | ⚃r⚂r | ⚂Tπππ⚁r | ⚃r | ⚃r | ⚄p | ⚃r | ⚄r□p | ⚂r | ⚄rr 
 ```
 are different from those generated when the account was controlled by a bot:
 ```

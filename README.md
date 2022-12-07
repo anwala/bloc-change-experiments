@@ -14,7 +14,12 @@
 
 Consider the BLOC action strings for `@jesus` generated from tweets posted by the account between December 8, 2009 and November 11, 2022. Recall that strings generated within the same week are separated by vertical bars `|`:
 ```
-T | ⚃T | ⚄T | ⚂T⚂T⚁T⚁T⚁T⚂T | ⚃T | ⚂T⚂T | ⚃T⚂T | ⚂T | ⚃T | ⚃T⚂T | ⚃T | ⚃T | ⚃T | ⚃T | ⚃T | ⚂T | ⚃T | ⚃T | ⚃T | ⚃T⚁T | ⚂T⚂T | ⚂T⚂T⚁T | ⚄T | ⚃T | ⚃T | ⚃T | ⚃T | ⚃T⚂T | ⚃T | ⚃T | ⚃T | ⚃T | ⚃T | ⚃T | ⚃T | ⚄T | ⚃T | ⚂T | ⚃T⚁T⚁T⚁T | ⚁T⚁T⚂T | ⚂T⚂T | ⚄T | ⚄T⚂T⚂T | ⚃T | ⚃T | ⚄T | ⚃T | ⚃T | ⚄T | ⚄T | ⚂T⚂T⚁T⚁T⚂T | ⚂T⚂T⚁T⚁T | ⚂T | ⚃T | ⚄T | ⚂T⚁T⚂T | ⚃T⚂T⚁T | ⚃T⚁T | ⚄T | ⚃T | ⚄T⚂T⚂T | ⚄T | ⚂T | ⚂T⚁T | ⚂T | ⚃T | ⚃T | ⚃T | ⚃T | ⚃T | ⚃T | ⚃T⚂T⚁T⚂T | ⚃T | ⚄T⚂T | ⚂T | ⚄T | ⚂T | ⚃T | ⚃T⚁T | ⚃T | ⚃T | ⚃T | ⚃T | ⚃T | ⚃T | ⚂T | ⚃T | ⚂T | ⚃T | ⚄T⚂T | ⚄T | ⚄T | ⚄T | ⚄T | ⚄T | ⚃T⚂T | ⚄T | ⚄T | ⚄T | ⚄T | ⚃T⚂T | ⚂T⚁T⚂T | ⚃T | ⚃T | ⚃T | ⚄T⚁T⚁T⚂T | ⚂T⚂T | ⚃T⚁T | ⚃T | ⚃T | ⚃T | ⚃T | ⚄p | ⚂T⚂T⚁T⚂T | ⚃T | ⚂T⚁T | ⚃T⚀T | ⚃T□T | ⚄T⚁T | ⚃T | ⚃T | ⚂T | ⚃T | ⚄T | ⚃T | ⚃T | ⚃T⚂T | ⚃T | ⚂T | ⚃T⚂T | ⚂T | ⚄T | ⚂T⚁T | ⚂T | ⚄T | ⚃T | ⚁T | ⚄T | ⚃T | ⚃T | ⚃T | ⚂T | ⚃T | ⚄T | ⚂T⚂T | ⚃T⚁T | ⚂T⚂T⚂T | ⚂T | ⚃T | ⚃T | ⚂T | ⚂T⚁T⚂T | ⚂T | ⚂T | ⚄T | ⚃T | ⚃T | ⚂T | ⚃T | ⚃T⚁T | ⚃T | ⚃T | ⚃T⚂T | ⚂T | ⚄T | ⚂T | ⚃T | ⚃T⚂T | ⚄T | ⚃T | ⚃T⚁T | ⚂T | ⚄T⚂T | ⚃T | ⚃p | ⚃T | ⚃T | ⚃T | ⚃T | ⚂T□T□T⚁T | ⚃T | ⚄T | ⚄T⚂T⚁π | ⚃T | ⚃T | ⚄T | ⚃T | ⚃T | ⚄T | ⚄T | ⚁p□p⚂T⚂p⚀T⚀p⚀p⚀p⚀p⚁p⚀p⚁p□p⚀p□p⚁T⚁T⚀p⚀p□T⚁T⚁T
+T | ⚃T | ⚄T | ⚂T⚂T⚁T⚁T⚁T⚂T | ⚃T | ⚂T⚂T | ⚃T⚂T | ⚂T | ⚃T | ⚃T⚂T | 
+⚃T | ⚃T | ⚃T | ⚃T | ⚃T | ⚂T | ⚃T | ⚃T | ⚃T | ⚃T⚁T | ⚂T⚂T | ⚂T⚂T⚁T |
+⚃T | ⚃T | ⚂T | ⚃T | ⚄T | ⚃T | ⚃T | ⚃T⚂T | ⚃T | ⚂T | ⚃T⚂T | ⚂T | ⚄T | 
+...⚃T⚂T | ⚄T | ⚃T | ⚃T⚁T | ⚂T | ⚄T⚂T | ⚃T | ⚃p | ⚃T | ⚃T | ⚃T | ⚃T | 
+⚄T⚂T⚁π | ⚃T | ⚃T | ⚄T | ⚃T | ⚃T | ⚄T | ⚄T | 
+⚁p□p⚂T⚂p⚀T⚀p⚀p⚀p⚀p⚁p⚀p⚁p□p⚀p□p⚁T⚁T⚀p⚀p□T⚁T⚁T
 ```
 Upon inspection, we observe that `@jesus`' actions mostly involve tweeting (`T`) and pausing (e.g., for weeks`⚃`). With the exception of the last week (`⚁p□p⚂T⚂p⚀T⚀p⚀p⚀p⚀p⚁p⚀p⚁p□p⚀p□p⚁T⚁T⚀p⚀p□T⚁T⚁T`), it rarely engaged in conversations or replies to tweets (`p`). More importantly, the BLOC string for the last week looks very different the others. In other words, the last week marks a change (maybe temporary) in behavior which coincides with when the account gained became verified.
 

@@ -37,11 +37,13 @@ are different from those generated when the account was controlled by a bot:
 
 **The main purpose of our change detection task is detect BLOC strings that are quite different from their neighbors. For example, `⚄T` is quite different from `⚁p□p⚂T⚂p⚀T⚀p⚀p⚀p⚀p⚁p⚀p⚁p□p⚀p□p⚁T⚁T⚀p⚀p□T⚁T⚁T`.**
 
+The motivation for detecting change is: since we expect that the behaviors of typical social media users is homogeneous, users that exhibit heterogeneous behaviors are suspicious. There quantifying change in behavior could be useful in identifying social media manipulation similar to bot detection and coordination detection.
+
 ### BLOC change command
 
 The BLOC `change` command was implemented to aid in identifying adjacent BLOC strings (e.g., `⚄rr` vs `⚄TππππππTπππππππππππππ□T`) that are "significantly" different. We define "significant" later. But for now, consider the following steps that summarize the method of measuring the similarity between adjacent (neighbors) BLOC strings.
 
-1. BLOC strings (e.g., `⚄r□p | ⚂r | ⚄rr | ⚄TππππππTπππππππππππππ`) are segmented into weekly bins; week 1: - `⚄r□p`, week 2: `⚂r`, week 3: `⚄rr`, and week 4: `⚄TππππππTπππππππππππππ`. Then we compute similarity between neighbors (e.g., `⚄r□p` vs. `⚂r` or `⚂r` vs. `⚄rr`).
+1. BLOC strings (e.g., `⚄r□p | ⚂r | ⚄rr | ⚄rr | ⚄TππππππTπππππππππππππ`) are segmented into weekly bins; week 1: - `⚄r□p`, week 2: `⚂r`, week 3: `⚄rr`, week 4: `⚄rr`, and week 5: `⚄TππππππTπππππππππππππ`. Then we compute similarity between neighbors (e.g., `⚄r□p` vs. `⚂r` or `⚂r` vs. `⚄rr`).
 
 2. Given a pair of neighbor BLOC strings, e.g., `⚄r□p` and `⚂r` from weeks 1 and 2, respectively, to measure their similarity, 
     a. First we convert the strings into TF-IDF vectors:
@@ -56,23 +58,32 @@ Step 2 is repeated for pairs of neighbors of BLOC strings:
 |:----------:|:----------:|:-----------------:|
 | `⚄r□p`     |     `⚂r`   |         0.21      |
 | `⚂r`       |     `⚄rr`  |         0.00      |
+| `⚄rr`      |     `⚄rr`  |         1.00      |
 | `⚄rr`      |     `⚄TππππππTπππππππππππππ`   |         0.12      |
 
 ### How much change is significant?
 
-```bash
-$ bloc change -o change_report.jsonl --token-pattern=word -m 8 --no-sort-action-words --bloc-alphabets action --bearer-token="$BEARER_TOKEN" OSoMe_IU acnwala
-```
+From the previous section, the four similarity values (0.21, 0.00, 1.00, and 0.12) indicate four degrees of change. For example, the BLOC string from week 3 and week 4 are the same (no change) resulting in a cosine similarity value of 1.00. In contrast, the BLOC strings from weeks 2 and week 3 have no character in common (100% change) resulting in a cosine similarity value of 0.00. The question remains, what cosine similarity value indicates significant change? If we chose 0.00, this means we would only flag neighbors that have no characters in common, but this might seems too strict. 
+
+Our first solution at identifying significant change starts with the following theory: `The change in BLOC strings follows a normal distribution.` We conjecture that change mostly hovers around a central value (the mean) and might deviate slightly away from the mean. Our theory is inspired by the rationale that the activities of typical social media users is homogeneous. In other words typical social media users have repetitive behaviors. Therefore, we could use our knowledge of the normal distribution (the mean µ and standard deviation σ) of the cosine similarity of adjacent BLOC strings for a sample of account s (e.g., 1000 human accounts) to identify change values that are significant. Since 68% of values are within one standard deviation of a normal distribution, change values that are outside this range could be considered significant. In other words, z-scores of cosine similarity value that exceed 1 could be considered significant.
+
+### Task 1: Run change analysis on account from command line
 
 Also try this:
 ```bash
 $ bloc change --timeline-startdate="2022-11-13 23:59:59" --change-mean=0.7 --change-stddev=0.3 --token-pattern=word -m 8 --no-sort-action-words --bloc-alphabets action --bearer-token="$BEARER_TOKEN" jesus
 ```
 
-### Task 2: Run change analysis on groups of tweets
+### Assignment 1: Run change analysis on groups of tweets
 
 ```bash
 $ python bloc_change.py --bc-keep-bloc-segments --add-pauses --bloc-model=word --tweets-path=../datasets --task evaluate rtbust
 ```
 
 To run analysis, modify [`bloc_change.py::run_tasks()`](https://github.com/anwala/bloc-change-experiments/blob/a22bd453563db0fa37b755f31b4e4aaeee0a87f0/scripts/bloc_change.py#L167)
+
+* What are the mean, median, and standard deviations of the cosine similarity values for `human` and `bot` rtbust accounts?
+
+### Assignment 2:
+
+Plot a histogram for the distribution of cosine similarity values for `human` and `bot` rtbust accounts

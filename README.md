@@ -40,7 +40,9 @@ Upon further inspection of `@storygraphbot`'s BLOC string, we can observe string
 ```
 are different from those generated when the account was controlled by a bot:
 ```
-⚄TππππππTπππππππππππππ□TππππππππππππππππππππππππππππππππππππππππππππππππππππππππππTππππππππ⚁TπππππππππππππππππππππππππππππππππTTπππππππππππ⚁T | ⚁π⚀π⚁π⚀π⚁π⚁π⚁π⚁Tππ⚀π⚀π⚁π⚁π⚀π⚁Tππππ⚁π⚀π⚁T⚀π⚁π⚁T⚀π⚁π⚁T⚀π⚁π⚀π⚁π⚁π⚁T⚀π⚀π⚁π⚀π⚁π⚁π⚀Tπ⚀π⚁π⚂T⚁π⚀π⚁π⚂T⚁π⚀π⚁π⚁π | ⚁T⚁π⚁Tπππππππππ
+⚄TππππππTπππππππππππππ□TππππππππππππππππππππππππππππππππππππππππππππππππππππππππππTπππππππ
+π⚁TπππππππππππππππππππππππππππππππππTTπππππππππππ⚁T | ⚁π⚀π⚁π⚀π⚁π⚁π⚁π⚁Tππ⚀π⚀π⚁π⚁π⚀π⚁Tππππ⚁π
+⚀π⚁T⚀π⚁π⚁T⚀π⚁π⚁T⚀π⚁π⚀π⚁π⚁π⚁T⚀π⚀π⚁π⚀π⚁π⚁π⚀Tπ⚀π⚁π⚂T⚁π⚀π⚁π⚂T⚁π⚀π⚁π⚁π | ⚁T⚁π⚁Tπππππππππ
 ```
 
 **The main purpose of our change detection task is detect BLOC strings that are quite different from their neighbors. For example, `⚄T` is quite different from `⚁p□p⚂T⚂p⚀T⚀p⚀p⚀p⚀p⚁p⚀p⚁p□p⚀p□p⚁T⚁T⚀p⚀p□T⚁T⚁T`.**

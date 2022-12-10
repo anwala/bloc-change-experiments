@@ -1,14 +1,18 @@
+#import logging
 import argparse
 import csv
 import gzip
-#import logging
+import matplotlib.pyplot as plt
 import os
+import seaborn as sns
 import sys
 import time
 
 from bloc.generator import add_bloc_sequences
 from bloc.subcommands import bloc_change_usr_self_cmp
 from bloc.util import dumpJsonToFile
+from bloc.util import five_number_summary
+from bloc.util import genericErrorInfo
 from bloc.util import get_default_symbols
 from bloc.util import getDictFromJson
 
@@ -166,6 +170,16 @@ def get_bloc_for_tweets(tweets_files, tweets_path, gen_bloc_params, **kwargs):
 
 def run_tasks(bloc_collection, args):
 
+    def draw_dist(summary_stats, dist, color):
+        #bin_width = 2 * (summary_stats['q3'] - summary_stats['q1']) * (len(dist) ** (-1/3))
+        #print('bin_width:', bin_width)
+
+        ax = sns.histplot( dist, binwidth=0.05, color=color, alpha=0.5 ) 
+        ax.set_xlabel ('Cosine similarity')
+        ax.set_ylabel ('Number of accounts')
+        
+        #ax.set_title('(source: midwest)')
+
     parenth_flag = '' if ('action_content_syntactic' in args.bc_bloc_alphabets or 'content_syntactic_with_pauses' in args.bc_bloc_alphabets) else '()'
     pause_flag = '|[□⚀⚁⚂⚃⚄⚅]' if args.add_pauses is True else ''
     word_token_pattern = f'[^□⚀⚁⚂⚃⚄⚅ |*{parenth_flag}]+{pause_flag}'
@@ -187,6 +201,7 @@ def run_tasks(bloc_collection, args):
     }
 
 
+    human_bot_dist = {'human': [], 'bot': []}
     for user_bloc in bloc_collection:
         
         user_change_report = bloc_change_usr_self_cmp(user_bloc, bloc_model, bloc_model['bloc_alphabets'], change_mean=args.change_mean, change_stddev=args.change_stddev, change_zscore_threshold=args.change_zscore_threshold)
@@ -194,9 +209,24 @@ def run_tasks(bloc_collection, args):
             continue
 
         sim_vals = [s['sim'] for s in user_change_report['self_sim']['action']]
-        print(user_bloc['class'], user_bloc['src'], '{:.2f}'.format(sum(sim_vals)/len(sim_vals)) )
-        print('DO SOME ANALYSIS HERE')
-        break
+        usr_class = user_bloc['class']#user_bloc['src']
+        
+        human_bot_dist[usr_class] += sim_vals
+
+    
+    human_sum = five_number_summary(human_bot_dist['human'])
+    bot_sum = five_number_summary(human_bot_dist['bot'])
+
+    print('Human summary')
+    print(human_sum)
+    print('Bot')
+    print(bot_sum)
+
+    draw_dist( human_sum, human_bot_dist['human'], color='green' )
+    draw_dist( bot_sum, human_bot_dist['bot'], color='red' )
+    plt.savefig('tmp.png', dpi=300)
+
+    
 
 
 def rename_cols(all_datasets, src_map):
@@ -352,6 +382,7 @@ def main():
     ]
 
     all_datasets = get_bloc_for_tweets( args.tweets_files, args.tweets_path, gen_bloc_params, max_users=args.max_users, min_tweets=args.min_tweets, max_tweets=args.max_tweets, src_maps=src_maps )
+    
     for src in all_datasets:
         print('src:', src)
         for clss, tweets in all_datasets[src].items():
@@ -368,3 +399,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

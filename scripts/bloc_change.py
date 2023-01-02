@@ -217,13 +217,9 @@ def run_tasks(bloc_collection, args):
     human_sum = five_number_summary(human_bot_dist['human'])
     bot_sum = five_number_summary(human_bot_dist['bot'])
 
-    print('Human summary')
-    print(human_sum)
-    print('Bot')
-    print(bot_sum)
-
     draw_dist( human_sum, human_bot_dist['human'], color='green' )
     draw_dist( bot_sum, human_bot_dist['bot'], color='red' )
+    
     plt.savefig('tmp.png', dpi=300)
 
     

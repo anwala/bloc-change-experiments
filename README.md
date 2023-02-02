@@ -79,9 +79,9 @@ Our first solution at identifying significant change starts with the following t
 
 #### Task 1: Run change analysis on account from command line
 
-Also try this:
+Also try this command which assumes that the change mean (`--change-mean`) and change standard deviation (`--change-stddev`) are 0.61 and 0.3, respectively. Ideally we would need to empirically derive these values from a dataset by measuring the mean and standard deviation of the cosine similarity of adjacent BLOC strings:
 ```bash
-$ bloc change --timeline-startdate="2022-11-13 23:59:59" --change-mean=0.7 --change-stddev=0.3 --token-pattern=word -m 8 --no-sort-action-words --bloc-alphabets action --bearer-token="$BEARER_TOKEN" jesus
+$ bloc change --timeline-startdate="2022-11-13 23:59:59" --change-mean=0.61 --change-stddev=0.3 --token-pattern=word -m 8 --no-sort-action-words --bloc-alphabets action --bearer-token="$BEARER_TOKEN" jesus
 ```
 
 #### Assignment 1: Run change analysis on groups of tweets
@@ -99,3 +99,38 @@ To run analysis, modify [`bloc_change.py::run_tasks()`](https://github.com/anwal
 Plot a histogram for the distribution of cosine similarity values for `human` and `bot` rtbust accounts
 
 ### Large-scale experiments
+
+<details>
+<summary>1. Empirically calculate change mean and std. dev.</summary>
+
+The following command calculates the change mean and std. dev. for [a population of bot and human accounts](https://botometer.osome.iu.edu/bot-repository/datasets.html). The experiment is conducted on the same sample of accounts used to [evaluate BLOC in the bot detection](https://arxiv.org/abs/2211.00639).
+
+Input: 
+```
+$ nohup python bloc_change.py --max-users=500 --bc-keep-bloc-segments --bc-bloc-alphabets action content_syntactic --add-pauses --bloc-model=word --tweets-path=/scratch/anwala/IU/BLOC/botometer_retraining_data/ --task bot_human_cosine_sim_dist astroturf cresci-17 gregory_purchased midterm-2018 stock verified botwiki gilani-17 kevin_feedback varol-icwsm zoher-organization &
+```
+
+Output:
+* For `action` (or `content_syntactic`) alphabets
+    * For `bot` accounts: `empirical-dists/action/emp_cosine_sim_dist_bot.json`
+    * For `human` accounts: ``empirical-dists/action/emp_cosine_sim_dist_human.json``
+
+</details>
+
+<details>
+<summary>2. Calculate change rates and draw change/change profile distributions and write dates change occurred.</summary>
+
+Given a tab-delimited file (`tweets-datasets-01/tweets.json.gz`) of format, `user_id, [tweet1, tweet2,...tweetn]`, the following command calculates change rates and draw change/change profile distributions and write dates change occurred.
+
+Input:
+```
+$ time python ../scripts/bloc_change.py --max-users=500 --change-mean=0.6129 --change-stddev=0.3019 --change-zscore-threshold=1.5 --bc-keep-bloc-segments --bc-bloc-alphabets action content_syntactic --add-pauses --bloc-model=word --tweets-path=/path/to/tweets/ --task cosine_sim_dist tweets-datasets-01
+``` 
+
+Output:
+* For `content_syntactic`, (or `action`) alphabets,
+    * change-dists/content_syntactic/change_dist_human.png
+    * change-dists/content_syntactic/change_profile_dist_human.png
+    * change-dists/content_syntactic/\_human_dist_change_dates.json
+
+</details>

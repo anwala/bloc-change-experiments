@@ -4,6 +4,7 @@ import csv
 import gzip
 import matplotlib.lines as mlines
 import matplotlib.pyplot as plt
+import networkx as nx
 import numpy as np
 import os
 import seaborn as sns
@@ -26,6 +27,7 @@ from info_ops_tk.create_datasets import get_driver_post_stats
 from info_ops_tk.util import get_bloc_lite_twt_frm_full_twt
 from info_ops_tk.util import parallelTask
 
+from itertools import combinations
 from random import shuffle
 from scipy.stats import ks_2samp
 
@@ -43,9 +45,9 @@ def get_generic_args():
 
     parser.add_argument('--no-merge', action='store_true', help='Do not merge dataset variants (e.g., "bot-A" and "bot-B") of sources into single class (e.g, "bot").')
     parser.add_argument('-o', '--outpath', default=os.getcwd() + '/Output/', help='Output path')
-    parser.add_argument('-t', '--task', default='bot_human_cosine_sim_dist', choices=['bot_human_cosine_sim_dist', 'info_ops_study'], help='Task to run')
+    parser.add_argument('-t', '--task', default='bot_human_cosine_sim_dist', choices=['bot_human_cosine_sim_dist', 'info_ops_study', 'cosine_sim_dist'], help='Task to run')
     parser.add_argument('--tweets-path', default='/scratch/anwala/IU/BLOC/botometer_retraining_data', help='The path to extract tweets for --tweets-files.')
-    parser.add_argument('--tweets-path-info-ops', default='/scratch/anwala/IU/BLOC/InfoOps/YYYY_MM', help='Drivers: the path to extract tweets for --tweets-files.')
+    #parser.add_argument('--tweets-path-info-ops', default='/scratch/anwala/IU/BLOC/InfoOps/YYYY_MM', help='Drivers: the path to extract tweets for --tweets-files.')
     
     #max parameters
     parser.add_argument('-m', '--max-tweets', type=int, default=-1, help='Maximum number of tweets per user to consider')
@@ -109,6 +111,7 @@ def get_bloc_for_tweets(tweets_files, tweets_path, gen_bloc_params, **kwargs):
     max_tweets = kwargs.get('max_tweets', -1)
     min_tweets = kwargs.get('min_tweets', 20)
 
+    user_class = ''
     payload = {}
     all_bloc_symbols = get_default_symbols()
     
@@ -128,8 +131,10 @@ def get_bloc_for_tweets(tweets_files, tweets_path, gen_bloc_params, **kwargs):
         user_id_class_map, all_classes = get_user_id_class_map( cf )
         print('all_classes:', all_classes)
         if( len(user_id_class_map) == 0 ):
-            print('\tuser_id_class_map is empty, returning')
-            continue
+            print('\tuser_id_class_map is empty, will use human class')
+            all_classes = ['human']
+            user_class = 'human'
+            #continue
         
         users_tweets = {}
         for c in all_classes:
@@ -151,7 +156,7 @@ def get_bloc_for_tweets(tweets_files, tweets_path, gen_bloc_params, **kwargs):
                     if( len(line) != 2 ):
                         continue
 
-                    user_class = user_id_class_map.get(line[0], '')
+                    user_class = user_id_class_map.get(line[0], '') if user_class == '' else user_class
                     if( user_class == '' ):
                         continue
                     
@@ -215,9 +220,99 @@ def draw_ccdfdist(dist, color, **kwargs):
     if( ylabel != '' ):
         ax.set_ylabel( ylabel )
 
-def calc_cosine_sim_dist(bloc_collection, bloc_model, args, legend_title='', compute_change_alphabet='action'):
+def study_info_ops_drivers(drivers_change_dates, bloc_collection, store_path, legend_title, **kwargs):
+    
+    def draw_info_ops_network(G, color='red'):
+        
+        pos = nx.kamada_kawai_layout(G)  #, seed=7 positions for all nodes - seed for reproducibility
+        
+        edge_weights = []
+        # edge weight labels
+        edge_labels = nx.get_edge_attributes(G, "weight")
+        for ky, val in edge_labels.items():
+            edge_labels[ky] = '{:.2f}'.format(val)
+            edge_weights.append(val)
 
-    def draw_change_dist(chrt_dist, styles, chart_type, store_path, legend_title='', stat_sig='' ):
+        # nodes
+        node_sizes = [v for v in dict(G.degree).values()]
+        nx.draw_networkx_nodes(G, pos, node_size=node_sizes, node_color=color, alpha=0.3, linewidths=0)
+
+        # edges
+        #edge_weights = 0.5
+        nx.draw_networkx_edges(G, pos, alpha=0.05, width=edge_weights)
+
+        # node labels
+        #nx.draw_networkx_labels(G, pos, font_size=5)
+
+        #remove edge labels
+        print('Not drawing edge labels')
+        edge_labels = {}
+        nx.draw_networkx_edge_labels(G, pos, edge_labels, font_size=4, bbox=dict(alpha=0))
+
+        #ax = plt.gca()
+        #plt.axis("off")
+        #plt.tight_layout()
+
+    count_of_drivers_with_change = len(drivers_change_dates)
+    indices = list(range(count_of_drivers_with_change))     
+    pairs = combinations(indices, 2)
+
+    G = nx.Graph()
+    for fst_u_indx, sec_u_indx in pairs:
+        
+        intersection = drivers_change_dates[fst_u_indx]['change_dates'] & drivers_change_dates[sec_u_indx]['change_dates']
+        union = drivers_change_dates[fst_u_indx]['change_dates'] | drivers_change_dates[sec_u_indx]['change_dates']
+        
+        fst_chng_dates_len = len(drivers_change_dates[fst_u_indx]['change_dates'])
+        sec_chng_dates_len = len(drivers_change_dates[sec_u_indx]['change_dates'])
+
+        min_size = min(fst_chng_dates_len, sec_chng_dates_len)
+        overlap = len(intersection)/min_size
+        jaccard = len(intersection)/len(union)
+
+        fst_bloc_col_indx = drivers_change_dates[fst_u_indx]['bloc_col_indx']
+        sec_bloc_col_indx = drivers_change_dates[sec_u_indx]['bloc_col_indx']
+
+        #if( overlap > 0 ):
+        if( jaccard > 0.2 ):
+
+            '''
+            if( kwargs['agent'] == 'driver' ):
+                print(drivers_change_dates[fst_u_indx]['change_dates'])
+                print(drivers_change_dates[sec_u_indx]['change_dates'])
+                #print(drivers_change_dates[fst_u_indx]['change_bloc'])
+                #print(drivers_change_dates[sec_u_indx]['change_bloc'])
+                #print('j:', jaccard, 'o:', overlap)
+                #print(bloc_collection[fst_bloc_col_indx].keys())
+                print()
+                #sys.exit(0)
+            '''
+
+            fst_node = '{}\n(cd: {}, cr: {:.2f})'.format( bloc_collection[fst_bloc_col_indx]['screen_name'], fst_chng_dates_len, drivers_change_dates[fst_u_indx]['change_rate'] )
+            sec_node = '{}\n(cd: {}, cr: {:.2f})'.format( bloc_collection[sec_bloc_col_indx]['screen_name'], sec_chng_dates_len, drivers_change_dates[sec_u_indx]['change_rate'] )
+            G.add_edge(fst_node, sec_node, weight=overlap)
+
+    campaign = kwargs['info_ops_dets']
+    color = 'red' if kwargs['agent'] == 'driver' else 'blue'
+    if( len(G.nodes()) != 0 ): 
+        draw_info_ops_network(G, color=color)
+
+    all_change_dates = list(campaign['all_change_dates'])
+    all_change_dates.sort()
+    all_change_dates = '' if len(all_change_dates) == 0 else f'{all_change_dates[0]} -- {all_change_dates[-1]} ({len(all_change_dates)} days)'
+
+    info_ops_stats = 'total_{}: {:,} (changed: {:,}; {})\nall_change_dates: {}\ncampaign_date_range: {}'.format(kwargs['agent'], campaign['total'], count_of_drivers_with_change, '{:.2f}'.format(count_of_drivers_with_change/campaign['total']), all_change_dates, campaign['campaign_timerange'])
+    handles = [ mlines.Line2D([], [], color=color, label='{}'.format(info_ops_stats)) ]
+    out_file = '{}{}_{}_cochange_graph.png'.format(store_path, legend_title, kwargs['agent'])
+
+    plt.legend( handles=handles, title=legend_title, fontsize=5 )
+    plt.savefig(out_file, dpi=300)
+    print('wrote:', out_file)
+    plt.clf()
+
+def calc_cosine_sim_dist(bloc_collection, bloc_model, args, legend_title='', compute_change_alphabet='action', **kwargs):
+
+    def draw_change_dist(chrt_dist, styles, chart_type, store_path, legend_title='', stat_sig='', **kwargs ):
         
         if( len(chrt_dist) == 0 ):
             return
@@ -230,43 +325,177 @@ def calc_cosine_sim_dist(bloc_collection, bloc_model, args, legend_title='', com
         dist_slug = '_'.join(all_classes)
         slug_prefix = '' if legend_title == '' else f'{legend_title}_'
         
+        driver_count = ''
+
         for usr_class in all_classes:
 
             usr_class_raw_dist_outfile = f'{store_path}{slug_prefix}{dist_slug}_{chart_type}_{usr_class}.txt'
+            '''
             outfile = open(usr_class_raw_dist_outfile, 'w')
             for v in chrt_dist[usr_class]:
                 outfile.write(f'{v}\n')
             outfile.close()
+            '''
+            print(f'skipped writing: {usr_class_raw_dist_outfile}')
             
             draw_ccdfdist( chrt_dist[usr_class], color=styles[counter]['color'], linestyle=styles[counter]['linestyle'], xlabel=styles[counter].get('xlabel', ''), ylabel=styles[counter].get('ylabel', ''), title=styles[counter].get('title', '') + stat_sig )
             lg_lines.append( mlines.Line2D([], [], color=styles[counter]['color'], label='{} ({:,})'.format(usr_class.capitalize(), len(chrt_dist[usr_class])), linestyle=styles[counter]['linestyle']) )
-            
+            driver_count = ' ({:,}) '.format(len(chrt_dist[usr_class])) if usr_class == 'driver' else ' '
             counter += 1
+            
 
         if( len(lg_lines) != 0 ):
             
             plt.legend( handles=lg_lines, title=legend_title )#prop={"size": 14},
-            plt.savefig(f'{store_path}{slug_prefix}{dist_slug}_{chart_type}.png', dpi=300)
+            plt.savefig(f'{store_path}{slug_prefix}{chart_type}_{dist_slug}.png', dpi=300)
             plt.clf()
-            print(f'saved {store_path}{slug_prefix}{dist_slug}_{chart_type}.png')
-    
+            print(f'saved {store_path}{slug_prefix}{chart_type}_{dist_slug}.png')
+
+
+        '''
+        drivers_all_dates_change_occurred = kwargs.get('drivers_all_dates_change_occurred', [])
+        if( len(drivers_all_dates_change_occurred) != 0 ):
+            drivers_all_dates_change_occurred = sorted( drivers_all_dates_change_occurred.items(), key=lambda x: x[0] )
+            dataset = [ driver_count[1] for driver_count in drivers_all_dates_change_occurred ]
+        
+            plt.plot(dataset, '-r', linewidth=0.7)
+            plt.title(f'Distribution of number of drivers{driver_count}changing over time.')
+            plt.ylabel('Number of drivers')
+            plt.xlabel('Days')
+            plt.savefig(f'{store_path}{slug_prefix}{dist_slug}_driver_change_timeline.png', dpi=300)
+            plt.clf()
+        '''
+            
+    def draw_change_profile_dist(chrt_dist, styles, chart_type, store_path, legend_title='', stat_sig='', **kwargs ):
+        
+        if( len(chrt_dist) == 0 ):
+            return
+
+        draw_plot_flag = kwargs.get('draw_plot', False)
+        lg_lines = kwargs.get('lg_lines', [])
+        counter = 0
+
+        all_classes = list(chrt_dist.keys())
+        all_classes.sort()
+        dist_slug = '_'.join(all_classes)
+        slug_prefix = '' if legend_title == '' else f'{legend_title}_'
+        
+        driver_count = ''
+
+        for usr_class in all_classes:
+            
+            draw_ccdfdist( chrt_dist[usr_class], color=styles[counter]['color'], linestyle=styles[counter]['linestyle'], xlabel=styles[counter].get('xlabel', ''), ylabel=styles[counter].get('ylabel', ''), title=styles[counter].get('title', '') + stat_sig )
+            lg_lines.append( mlines.Line2D([], [], color=styles[counter]['color'], label='{}: {}'.format(styles[counter]['change_profile'], usr_class.capitalize()), linestyle=styles[counter]['linestyle']) )
+            driver_count = ' ({:,}) '.format(len(chrt_dist[usr_class])) if usr_class == 'driver' else ' '
+            counter += 1
+
+
+        if( draw_plot_flag ):
+            plt.legend( handles=lg_lines, title=legend_title )#prop={"size": 14},
+            plt.savefig(f'{store_path}{slug_prefix}{chart_type}_{dist_slug}.png', dpi=300)
+            plt.clf()
+            print(f'saved {store_path}{slug_prefix}{chart_type}_{dist_slug}.png')
+
+    def test_for_stats_sig(chrt_dist):
+
+        stat_sig = ''
+        pair_dist = [ chrt_dist[usr_class] for usr_class in chrt_dist ]
+        
+        if( len(pair_dist) == 2 ):
+            try:
+                ks_stat = ks_2samp(pair_dist[0], pair_dist[1])
+                stat_sig = '\n(KS-test, p < 0.01)' if ks_stat.pvalue < 0.01 else ''
+                stat_sig = '\n(KS-test, p < 0.05)' if ks_stat.pvalue < 0.05 and stat_sig == '' else stat_sig
+            except:
+                genericErrorInfo()
+
+        return stat_sig
+
+    def explore_change_dist(change_dist):
+
+        for usr_class, class_dist in change_dist.items():
+            for user_change in class_dist:
+                print(user_change)
+                break
+            break
+
+    def get_dates_change_occurred(change_dist, user_bloc, bloc_alph):
+
+        change_dates = []
+        change_bloc = []
+        for cd in change_dist:
+            
+            if( 'changed' not in cd ):
+                continue
+
+            fst_seg_key = cd['fst_doc_seg_id']
+            sec_seg_key = cd['sec_doc_seg_id']
+
+            change_dates += list(user_bloc['bloc_segments']['segments_details'][fst_seg_key]['local_dates'].keys()) + list(user_bloc['bloc_segments']['segments_details'][sec_seg_key]['local_dates'].keys())
+            change_bloc.append( [user_bloc['bloc_segments']['segments'][fst_seg_key][bloc_alph], user_bloc['bloc_segments']['segments'][sec_seg_key][bloc_alph]] )
+        
+        change_dates = set(change_dates)
+        return {
+            'change_dates': change_dates,
+            'change_bloc': change_bloc
+        }
+
     print('\ncalc_cosine_sim_dist():')
     print(f'\nrun_task: {args.task}')
     print(f'\tbloc alphabets: {args.bc_bloc_alphabets}')
     print(f'\tword_token_pattern:', bloc_model['token_pattern'])
 
     sim_dist = {}
+    pause_profile_dist = {}
+    word_profile_dist = {}
+    activity_profile_dist = {}
+
     change_dist = {}
     styles = [
-        {'color': 'red', 'linestyle': '--'},
-        {'color': 'green', 'linestyle': '-', 'xlabel': 'Cosine similarity', 'ylabel': 'CCDF', 'title': 'Distribution of cosine similarity between\nBLOC strings from adjacent weeks.'}
+        {'color': 'green', 'linestyle': 'dotted'},
+        {'color': 'red', 'linestyle': '-', 'xlabel': 'Cosine similarity', 'ylabel': 'CCDF', 'title': f'Distribution of cosine similarity between\nBLOC {compute_change_alphabet} words (adjacent weeks).'}
     ]
 
-    for user_bloc in bloc_collection:
+    info_ops_dets = {
+        'driver': {'total': 0, 'all_change_dates': set(), 'campaign_timerange': kwargs.get('campaign_timerange', ''), 'dates_change_occurred': [], 'dates_change_dist': {}, 'dates_change_dist_total': 0},
+        'control': {'total': 0, 'all_change_dates': set(), 'campaign_timerange': kwargs.get('campaign_timerange', ''), 'dates_change_occurred': [], 'dates_change_dist': {}, 'dates_change_dist_total': 0},
+        'human': {'total': 0, 'all_change_dates': set(), 'campaign_timerange': kwargs.get('campaign_timerange', ''), 'dates_change_occurred': [], 'dates_change_dist': {}, 'dates_change_dist_total': 0},
+        'bot': {'total': 0, 'all_change_dates': set(), 'campaign_timerange': kwargs.get('campaign_timerange', ''), 'dates_change_occurred': [], 'dates_change_dist': {}, 'dates_change_dist_total': 0}
+    }
+    
+    for i in range(len(bloc_collection)):
         
+        user_bloc = bloc_collection[i]
         user_change_report = bloc_change_usr_self_cmp(user_bloc, bloc_model, bloc_model['bloc_alphabets'], change_mean=args.change_mean, change_stddev=args.change_stddev, change_zscore_threshold=args.change_zscore_threshold)
         if( len(user_change_report['self_sim'][compute_change_alphabet]) == 0 ):
             continue
+        
+        '''
+        if( len(user_change_report['self_sim'][compute_change_alphabet]) > 3 and [1 for sm in user_change_report['self_sim'][compute_change_alphabet] if 'changed' in sm].count(1) != 0 ):
+            dumpJsonToFile('tmp_bloc.json', user_bloc)
+            dumpJsonToFile('tmp_change.json', user_change_report)
+            sys.exit(0)
+        '''
+
+        #co-change graph - start
+        user_class = user_bloc['class']
+
+        #if( user_class in ['driver', 'control'] ):
+        info_ops_dets[user_class]['total'] += 1
+        change_rp = get_dates_change_occurred( user_change_report['self_sim'][compute_change_alphabet], user_bloc, compute_change_alphabet )
+
+        #change_rp example: {'change_dates': {'2016-05-07', '2016-05-16', '2016-05-08', '2017-02-19', '2016-05-15', '2017-02-20'}, 'change_bloc': [['T⚀T⚁rr⚁r□rrr⚀rrrr⚁rrr', '⚃r'], ['⚃r', '⚁Trr⚁Trr⚁T'], ['⚁Trr⚁Trr⚁T', '⚄rr'], ['⚄rr', '⚁rrrrrr⚁r□r□rrrr⚁rrrrrrrrr□r□r⚀rr□r⚀r□r⚀r⚀rr⚁rrrrr⚀rrr⚀rr⚁rrr□rrr⚀rrr□r⚀r□rr']]}
+
+        if( len(change_rp['change_dates']) != 0 ):
+            info_ops_dets[user_class]['dates_change_occurred'].append({ 'bloc_col_indx': i, 'change_dates': change_rp['change_dates'], 'change_rate': user_change_report['change_rates'][compute_change_alphabet], 'change_bloc': change_rp['change_bloc'] })
+            info_ops_dets[user_class]['all_change_dates'] = info_ops_dets[user_class]['all_change_dates'] | change_rp['change_dates']
+
+            for chng_yyyy_mm_dd in change_rp['change_dates']:
+                info_ops_dets[user_class]['dates_change_dist'].setdefault(chng_yyyy_mm_dd, 0)
+                info_ops_dets[user_class]['dates_change_dist'][chng_yyyy_mm_dd] += 1
+                info_ops_dets[user_class]['dates_change_dist_total'] += 1
+
+        #co-change graph - end
 
         sim_vals = [ s['sim'] for s in user_change_report['self_sim'][compute_change_alphabet] ]
         usr_class = user_bloc['class']#user_bloc['src']
@@ -279,11 +508,20 @@ def calc_cosine_sim_dist(bloc_collection, bloc_model, args, legend_title='', com
             change_dist.setdefault(usr_class, [])
             change_dist[usr_class].append(change_rate)
 
+            pause_profile_dist.setdefault(usr_class, [])
+            pause_profile_dist[usr_class] += [ s['change_profile']['pause'] for s in user_change_report['self_sim'][compute_change_alphabet] ]
+
+            word_profile_dist.setdefault(usr_class, [])
+            word_profile_dist[usr_class] += [ s['change_profile']['word'] for s in user_change_report['self_sim'][compute_change_alphabet] ]
+
+            activity_profile_dist.setdefault(usr_class, [])
+            activity_profile_dist[usr_class] += [ s['change_profile']['activity'] for s in user_change_report['self_sim'][compute_change_alphabet] ]
         '''
-        if( change_rate > 0.15 ):
+        if( change_rate >= 0.5 ):
             print('**change**')
             print('change_rate:', change_rate)
             print('screen_name:', user_bloc['screen_name'], usr_class)
+            print('change_dates:', change_dates)
             print(user_bloc['bloc'][compute_change_alphabet])
             print()
         '''
@@ -294,51 +532,120 @@ def calc_cosine_sim_dist(bloc_collection, bloc_model, args, legend_title='', com
     if( [args.change_mean, args.change_stddev].count(None) == 2 ):
         
         print('\tEmpirical stats:')
-        pair_dist = []
+        
         for usr_class, class_dist in sim_dist.items():
-            
             sum_stats = five_number_summary(sim_dist[usr_class])
             sum_stats['user_class'] = usr_class
-            pair_dist += [ sim_dist[usr_class] ]
 
             dumpJsonToFile(f'./empirical-dists/{compute_change_alphabet}/emp_cosine_sim_dist_{usr_class}.json', sum_stats )
             print(f'\twrote ./empirical-dists/{compute_change_alphabet}/emp_cosine_sim_dist_{usr_class}.json')
         
-        stat_sig = ''
-        if( len(pair_dist) == 2 ):
-            ks_stat = ks_2samp(pair_dist[0], pair_dist[1])
-            stat_sig = ' (KS-test, p < 0.01)' if ks_stat.pvalue < 0.01 else ''
-            stat_sig = ' (KS-test, p < 0.05)' if ks_stat.pvalue < 0.05 and stat_sig == '' else stat_sig
-
+        stat_sig = test_for_stats_sig(sim_dist)
         draw_change_dist(sim_dist, styles, 'cosine_sim_dist', store_path=f'./empirical-dists/{compute_change_alphabet}/', legend_title=legend_title, stat_sig=stat_sig)
+        print()
+        
     else:
-        styles[-1]['xlabel'] = 'Change rate'
-        styles[-1]['ylabel'] = 'CCDF'
-        styles[-1]['title'] = 'Distribution of change rate.'
-        draw_change_dist(change_dist, styles, 'change_dist', store_path=f'./change-dists/{compute_change_alphabet}/', legend_title=legend_title)
+        all_classes = len(change_dist.keys())
+        style_indx = -1 if all_classes > 1 else 0
 
+        styles[style_indx]['xlabel'] = 'Change rate'
+        styles[style_indx]['ylabel'] = 'CCDF'
+        styles[style_indx]['title'] = f'Distribution of BLOC {compute_change_alphabet} change rate.'
+        stat_sig = test_for_stats_sig(change_dist)
+        
+        draw_change_dist(change_dist, styles, 'change_dist', store_path=f'./change-dists/{compute_change_alphabet}/', legend_title=legend_title, stat_sig=stat_sig)
+        print()
+
+        styles = [
+            {'color': 'red', 'linestyle': '-', 'change_profile': 'p'},
+            {'color': 'red', 'linestyle': 'dotted', 'change_profile': 'p'},
+            {'color': 'green', 'linestyle': '-', 'change_profile': 'w'},
+            {'color': 'green', 'linestyle': 'dotted', 'change_profile': 'w'}
+        ]
+        
+        if( style_indx == -1 ):
+            styles.append({'color': 'cyan', 'linestyle': '-', 'change_profile': 'a'})
+            styles.append({'color': 'cyan', 'linestyle': 'dotted', 'change_profile': 'a', 'xlabel': 'Pause(p)/Word(w)/Activity(a) change', 'ylabel': 'CCDF', 'title': f'Distribution of change profiles for \nBLOC {compute_change_alphabet} strings from adjacent weeks.'})
+        else:
+            styles.append({'color': 'cyan', 'linestyle': '-', 'change_profile': 'a', 'xlabel': 'Pause(p)/Word(w)/Activity(a) change', 'ylabel': 'CCDF', 'title': f'Distribution of change profiles for \nBLOC {compute_change_alphabet} strings from adjacent weeks.'})
+            styles.append({'color': 'cyan', 'linestyle': 'dotted', 'change_profile': 'a'})
+
+        lg_lines = []
+        draw_change_profile_dist(pause_profile_dist, [styles[0], styles[1]], 'change_profile_dist', store_path=f'./change-dists/{compute_change_alphabet}/', legend_title=legend_title, stat_sig=stat_sig, lg_lines=lg_lines)
+        draw_change_profile_dist(word_profile_dist, [styles[2], styles[3]], 'change_profile_dist', store_path=f'./change-dists/{compute_change_alphabet}/', legend_title=legend_title, stat_sig=stat_sig, lg_lines=lg_lines)
+        draw_change_profile_dist(activity_profile_dist, [styles[4], styles[5]], 'change_profile_dist', store_path=f'./change-dists/{compute_change_alphabet}/', legend_title=legend_title, stat_sig=stat_sig, lg_lines=lg_lines, draw_plot=True)
+
+        for agent in ['driver', 'control', 'human', 'bot']:
+            if( info_ops_dets[agent]['total'] == 0 ):
+                continue
+
+            study_info_ops_drivers(info_ops_dets[agent]['dates_change_occurred'], bloc_collection, store_path=f'./change-dists/{compute_change_alphabet}/', legend_title=legend_title, info_ops_dets=info_ops_dets[agent], agent=agent)
+
+            info_ops_dets[agent]['dates_change_dist'] = sorted( info_ops_dets[agent]['dates_change_dist'].items(), key=lambda x: x[1], reverse=True )
+            info_ops_dets[agent]['dates_change_dist'] = [ 
+                {'date': date_freq_tup[0], 'freq': date_freq_tup[1], 'rate': date_freq_tup[1]/info_ops_dets[agent]['dates_change_dist_total']} for date_freq_tup in info_ops_dets[agent]['dates_change_dist'] ]
+            dist_dist_fname = '{}{}_{}_dist_change_dates.json'.format(f'./change-dists/{compute_change_alphabet}/', legend_title, agent)
+            
+            dumpJsonToFile(dist_dist_fname, info_ops_dets[agent]['dates_change_dist'])
+            print('Saved:', dist_dist_fname)
 
 def info_ops_study(args, bloc_model, gen_bloc_params):
     print('\ninfo_ops_study()')
-    driver_file = '2021_12/CNHU_0621_YYYY/CNHU_0621_2020/driver_tweets.csv.gz'
-    driver_file = '2021_12/MX_0621_YYYY/MX_0621_2019/driver_tweets.csv.gz'
-    driver_file = '2021_12/Venezuela_0621_YYYY/Venezuela_0621_2021/driver_tweets.csv.gz'
-    driver_file = '2021_12/CNHU_0621_YYYY/CNHU_0621_2021/driver_tweets.csv.gz'
-    driver_file = '2021_12/uganda_0621_YYYY/uganda_0621_2019/driver_tweets.csv.gz'
-    driver_file = '2021_12/uganda_0621_YYYY/uganda_0621_2020/driver_tweets.csv.gz'
-    driver_file = '2019_06/catalonia_201906_1/driver_tweets.csv.gz'
-    driver_file = '2020_03/ghana_nigeria_032020/driver_tweets.csv.gz'
-    driver_file = '2021_12/Venezuela_0621_YYYY/Venezuela_0621_2020/driver_tweets.csv.gz'
-    driver_file = '2020_12/armenia_202012/driver_tweets.csv.gz'
-    campaign = driver_file.split('/')[-2]
-    args.min_user_count = 999999999#10, 
 
-    args.tweets_path_info_ops = args.tweets_path_info_ops.strip()
-    args.tweets_path_info_ops = args.tweets_path_info_ops if ( args.tweets_path_info_ops.endswith('/') or args.tweets_path_info_ops == '' ) else args.tweets_path_info_ops.strip() + '/'
+    #driver_file = '2020_12/armenia_202012/driver_tweets.csv.gz'
+    #driver_file = '2019_01/bangladesh_201901_1/driver_tweets.csv.gz'
+    #driver_file = '2019_06/catalonia_201906_1/driver_tweets.csv.gz'
+    #driver_file = '2019_08/china_082019_1/driver_tweets.csv.gz'
+    #driver_file = '2019_08/china_082019_2/driver_tweets.csv.gz'
+    #driver_file = '2021_12/CNCC_0621_YYYY/CNCC_0621_2021/driver_tweets.csv.gz'
+    #driver_file = '2021_12/CNHU_0621_YYYY/CNHU_0621_2020/driver_tweets.csv.gz'
+    #driver_file = '2021_12/CNHU_0621_YYYY/CNHU_0621_2021/driver_tweets.csv.gz'
+    #driver_file = '2020_08/cuba_082020/driver_tweets.csv.gz'
+    #driver_file = '2019_08/ecuador_082019_1/driver_tweets.csv.gz'
+    #driver_file = '2019_08/egypt_uae_082019_1/driver_tweets.csv.gz'
+    #driver_file = '2020_03/ghana_nigeria_032020/driver_tweets.csv.gz'
+    #driver_file = '2018_10/ira/driver_tweets.csv.gz'
+    #driver_file = '2019_01/russia_201901_1/driver_tweets.csv.gz'
+    #driver_file = '2020_12/IRA_202012/driver_tweets.csv.gz'
+    #driver_file = '2020_12/GRU_202012/driver_tweets.csv.gz'
+    #driver_file = '2020_09/ira_092020/driver_tweets.csv.gz'
+    #driver_file = '2018_10/iranian/driver_tweets.csv.gz'
+    #driver_file = '2019_01/iran_201901_X/iran_201901_1/driver_tweets.csv.gz'
+    #driver_file = '2019_06/iran_201906_1/driver_tweets.csv.gz'
+    #driver_file = '2019_06/iran_201906_2/driver_tweets.csv.gz'
+    #driver_file = '2019_06/iran_201906_3/driver_tweets.csv.gz'
+    #driver_file = '2020_09/iran_092020/driver_tweets.csv.gz'
+    #driver_file = '2020_12/iran_202012/driver_tweets.csv.gz'
+    #driver_file = '2021_12/MX_0621_YYYY/MX_0621_2019/driver_tweets.csv.gz'
+    #driver_file = '2021_12/MX_0621_YYYY/MX_0621_2020/driver_tweets.csv.gz'
+    #driver_file = '2020_08/qatar_082020/driver_tweets.csv.gz'
+    #driver_file = '2019_08/spain_082019_1/driver_tweets.csv.gz'
+    #driver_file = '2020_09/thailand_092020/driver_tweets.csv.gz'
+    #driver_file = '2019_08/egypt_uae_082019_1/driver_tweets.csv.gz'
+    #driver_file = '2021_12/uganda_0621_YYYY/uganda_0621_2019/driver_tweets.csv.gz'
+    #driver_file = '2021_12/uganda_0621_YYYY/uganda_0621_2020/driver_tweets.csv.gz'
+    #driver_file = '2019_01/venezuela_201901_1/driver_tweets.csv.gz'
+    #driver_file = '2019_01/venezuela_201901_2/driver_tweets.csv.gz'
+    #driver_file = '2019_06/venezuela_201906_1/driver_tweets.csv.gz'
+    #driver_file = '2021_12/Venezuela_0621_YYYY/Venezuela_0621_2020/driver_tweets.csv.gz'
+    #driver_file = '2021_12/Venezuela_0621_YYYY/Venezuela_0621_2021/driver_tweets.csv.gz'
+    
+    for driver_file in args.tweets_files:
+        
+        #------------------------------------#
+        #------------------------------------#
+        campaign = driver_file.split('/')[-2]
+        args.min_user_count = 999999999#10, 
 
-    payload = get_driver_post_stats( f'{args.tweets_path_info_ops}{driver_file}', start_datetime='', end_datetime='' )
-    driver_post_dates_dets = get_driver_post_date_dist( payload['driver_posts_stats_yyyy_mm_dd'], payload['total_posts'] )
-    info_ops_study_drivers_vs_control_users(driver_post_dates_dets, driver_file, campaign, args, bloc_model, gen_bloc_params)
+        args.tweets_path = args.tweets_path.strip()
+        args.tweets_path = args.tweets_path if ( args.tweets_path.endswith('/') or args.tweets_path == '' ) else args.tweets_path.strip() + '/'
+
+        payload = get_driver_post_stats( f'{args.tweets_path}{driver_file}', start_datetime='', end_datetime='' )
+        driver_post_dates_dets = get_driver_post_date_dist( payload['driver_posts_stats_yyyy_mm_dd'], payload['total_posts'] )
+        info_ops_study_drivers_vs_control_users(driver_post_dates_dets, driver_file, campaign, args, bloc_model, gen_bloc_params)
+
+        #print('debug break')
+        #break
 
 def gen_bloc_for_user(users, gen_bloc_params):
 
@@ -416,11 +723,11 @@ def info_ops_study_drivers_vs_control_users(driver_post_dates_dets, driver_file,
 
 
     maximum_tweets_per_driver_and_control = 100
-    driver_control_users_file = get_driver_control_filename_mk_tweet_path(tweets_path=f'{args.tweets_path_info_ops}{driver_file}')
+    driver_control_users_file = get_driver_control_filename_mk_tweet_path(tweets_path=f'{args.tweets_path}{driver_file}')
     
     print('\tgetting full timeline driver & control tweets from {} to {}'.format(driver_post_dates[0], driver_post_dates[-1]))
     #get all tweets posted by driver and control for dates driver posted with hashtags (driver_post_dates_dict)
-    driver_all_user_posts = get_driver_per_day_tweets( f'{args.tweets_path_info_ops}{driver_file}', driver_post_dates_dict, start_datetime='', end_datetime='' )
+    driver_all_user_posts = get_driver_per_day_tweets( f'{args.tweets_path}{driver_file}', driver_post_dates_dict, start_datetime='', end_datetime='' )
     contro_all_user_posts = get_driver_control_per_day_tweets(driver_control_users_file, driver_post_dates_dict, start_datetime='', end_datetime='')
     
 
@@ -454,12 +761,10 @@ def info_ops_study_drivers_vs_control_users(driver_post_dates_dets, driver_file,
         contro_all_user_blocs[i]['src'] = campaign
         contro_all_user_blocs[i]['class'] = 'control'
 
-    #'''
+    
     #driver_all_user_blocs[0]: dict_keys(['bloc', 'tweets', 'bloc_segments', 'created_at_utc', 'screen_name', 'user_id', 'bloc_symbols_version', 'more_details', 'tweet_count'])
-    calc_cosine_sim_dist(driver_all_user_blocs + contro_all_user_blocs, bloc_model, args, legend_title=campaign)
-    #calc_cosine_sim_dist(bloc_collection, bloc_model, args, legend_title='', compute_change_alphabet='action')
-    #'''
-        
+    calc_cosine_sim_dist(driver_all_user_blocs + contro_all_user_blocs, bloc_model, args, legend_title=f'{campaign}', campaign_timerange=f'{unfiltered_driver_post_dates[0]} to {unfiltered_driver_post_dates[-1]}')
+    
 
 def get_driver_control_per_day_tweets(driver_control_users_file, driver_post_dates_dict, start_datetime, end_datetime):
     
@@ -628,6 +933,7 @@ def main():
     for ky, val in params.items():
         if( ky.startswith('bc_') ):
             gen_bloc_params[ky[3:]] = val
+
     
     merge_lst = [
         {
@@ -701,11 +1007,10 @@ def main():
     add_more_details( all_datasets)#must call this after merge_srcs and rename_cols
     
     all_datasets = flatten_dataset_shuffle( all_datasets )
-    if( args.task == 'bot_human_cosine_sim_dist' ):
+    if( args.task.endswith('cosine_sim_dist') ):
 
         for comp_bloc_alph in args.bc_bloc_alphabets:
             calc_cosine_sim_dist(all_datasets, bloc_model, args, compute_change_alphabet=comp_bloc_alph)
 
 if __name__ == "__main__":
     main()
-

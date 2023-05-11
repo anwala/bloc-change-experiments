@@ -110,7 +110,7 @@ Plot a histogram for the distribution of cosine similarity values for `human` an
 
 The following command calculates the change mean and std. dev. for [a population of bot and human accounts](https://botometer.osome.iu.edu/bot-repository/datasets.html). The experiment is conducted on the same sample of accounts used to [evaluate BLOC in the bot detection](https://arxiv.org/abs/2211.00639).
 
-Input
+Input:
 ```
 $ nohup python bloc_change.py --max-users=500 --bc-keep-bloc-segments --bc-bloc-alphabets action content_syntactic --add-pauses --bloc-model=word --tweets-path=/scratch/anwala/IU/BLOC/botometer_retraining_data/ --task bot_human_cosine_sim_dist astroturf cresci-17 gregory_purchased midterm-2018 stock verified botwiki gilani-17 kevin_feedback varol-icwsm zoher-organization &
 ```

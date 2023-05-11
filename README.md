@@ -77,16 +77,12 @@ From the previous section, the four similarity values (0.21, 0.00, 1.00, and 0.1
 
 Our first solution at identifying significant change starts with the following theory: `The change in BLOC strings follows a normal distribution.` We conjecture that change mostly hovers around a central value (the mean) and might deviate slightly away from the mean. Our theory is inspired by the rationale that the activities of typical social media users is homogeneous. In other words typical social media users have repetitive behaviors. Therefore, we could use our knowledge of the normal distribution (the mean µ and standard deviation σ) of the cosine similarity of adjacent BLOC strings for a sample of account s (e.g., 1000 human accounts) to identify change values that are significant. Since 68% of values are within one standard deviation of a normal distribution, change values that are outside this range could be considered significant. In other words, z-scores of cosine similarity value that exceed 1 could be considered significant.
 
-<<<<<<< HEAD
-#### Task 1: Run change analysis on account from command line
-=======
 References:
 * [How to solve for percentage in Normal dist.](https://math.stackexchange.com/a/1657743)
 * [Normal dist. table](https://www.mathsisfun.com/data/standard-normal-distribution-table.html)
 * [AP statistics review of density curves/normal distribution](https://www.khanacademy.org/math/ap-statistics/density-curves-normal-distribution-ap)
 
 ### Task 1: Run change analysis on account from command line
->>>>>>> 3ad0abc (regular update)
 
 Also try this command which assumes that the change mean (`--change-mean`) and change standard deviation (`--change-stddev`) are 0.61 and 0.3, respectively. Ideally we would need to empirically derive these values from a dataset by measuring the mean and standard deviation of the cosine similarity of adjacent BLOC strings:
 ```bash

@@ -121,6 +121,7 @@ def get_bloc_for_tweets(tweets_files, tweets_path, gen_bloc_params, **kwargs):
         cf = '/'.join( f.split('/')[:-1] ) + '/userIds.txt'
         src = f.split('/')[-2]
         
+        print('tweets_path:', tweets_path)
         print('tweets file:', f)
         print('src:', src)
         
@@ -516,15 +517,15 @@ def calc_cosine_sim_dist(bloc_collection, bloc_model, args, legend_title='', com
 
             activity_profile_dist.setdefault(usr_class, [])
             activity_profile_dist[usr_class] += [ s['change_profile']['activity'] for s in user_change_report['self_sim'][compute_change_alphabet] ]
-        '''
-        if( change_rate >= 0.5 ):
-            print('**change**')
-            print('change_rate:', change_rate)
-            print('screen_name:', user_bloc['screen_name'], usr_class)
-            print('change_dates:', change_dates)
-            print(user_bloc['bloc'][compute_change_alphabet])
-            print()
-        '''
+        #'''
+        #if( change_rate >= 0.5 ):
+        print('**change**')
+        print('change_rate:', change_rate)
+        print('screen_name:', user_bloc['screen_name'], usr_class)
+        #print('change_dates:', change_dates)
+        print(user_bloc['bloc'][compute_change_alphabet])
+        print()
+        #'''
     
     os.makedirs( f'./empirical-dists/{compute_change_alphabet}', exist_ok=True )
     os.makedirs( f'./change-dists/{compute_change_alphabet}', exist_ok=True )
@@ -630,7 +631,10 @@ def info_ops_study(args, bloc_model, gen_bloc_params):
     #driver_file = '2021_12/Venezuela_0621_YYYY/Venezuela_0621_2020/driver_tweets.csv.gz'
     #driver_file = '2021_12/Venezuela_0621_YYYY/Venezuela_0621_2021/driver_tweets.csv.gz'
     
-    for driver_file in args.tweets_files:
+    all_tweets_files = ['2020_12/armenia_202012/driver_tweets.csv.gz', '2019_01/bangladesh_201901_1/driver_tweets.csv.gz', '2019_06/catalonia_201906_1/driver_tweets.csv.gz', '2019_08/china_082019_1/driver_tweets.csv.gz', '2019_08/china_082019_2/driver_tweets.csv.gz', '2021_12/CNCC_0621_YYYY/CNCC_0621_2021/driver_tweets.csv.gz', '2021_12/CNHU_0621_YYYY/CNHU_0621_2020/driver_tweets.csv.gz', '2021_12/CNHU_0621_YYYY/CNHU_0621_2021/driver_tweets.csv.gz', '2020_08/cuba_082020/driver_tweets.csv.gz', '2019_08/ecuador_082019_1/driver_tweets.csv.gz', '2019_08/egypt_uae_082019_1/driver_tweets.csv.gz', '2020_03/ghana_nigeria_032020/driver_tweets.csv.gz', '2018_10/ira/driver_tweets.csv.gz', '2019_01/russia_201901_1/driver_tweets.csv.gz', '2020_12/IRA_202012/driver_tweets.csv.gz', '2020_12/GRU_202012/driver_tweets.csv.gz', '2020_09/ira_092020/driver_tweets.csv.gz', '2018_10/iranian/driver_tweets.csv.gz', '2019_01/iran_201901_X/iran_201901_1/driver_tweets.csv.gz', '2019_06/iran_201906_1/driver_tweets.csv.gz', '2019_06/iran_201906_2/driver_tweets.csv.gz', '2019_06/iran_201906_3/driver_tweets.csv.gz', '2020_09/iran_092020/driver_tweets.csv.gz', '2020_12/iran_202012/driver_tweets.csv.gz', '2021_12/MX_0621_YYYY/MX_0621_2019/driver_tweets.csv.gz', '2021_12/MX_0621_YYYY/MX_0621_2020/driver_tweets.csv.gz', '2020_08/qatar_082020/driver_tweets.csv.gz', '2019_08/spain_082019_1/driver_tweets.csv.gz', '2020_09/thailand_092020/driver_tweets.csv.gz', '2019_08/egypt_uae_082019_1/driver_tweets.csv.gz', '2021_12/uganda_0621_YYYY/uganda_0621_2019/driver_tweets.csv.gz', '2021_12/uganda_0621_YYYY/uganda_0621_2020/driver_tweets.csv.gz', '2019_01/venezuela_201901_1/driver_tweets.csv.gz', '2019_01/venezuela_201901_2/driver_tweets.csv.gz', '2019_06/venezuela_201906_1/driver_tweets.csv.gz', '2021_12/Venezuela_0621_YYYY/Venezuela_0621_2020/driver_tweets.csv.gz', '2021_12/Venezuela_0621_YYYY/Venezuela_0621_2021/driver_tweets.csv.gz']
+    all_tweets_files = ['2019_08/china_082019_2/driver_tweets.csv.gz']
+    for driver_file in all_tweets_files:
+    #for driver_file in args.tweets_files:
         
         #------------------------------------#
         #------------------------------------#
@@ -990,6 +994,7 @@ def main():
 
     
     if( args.task == 'info_ops_study' ):
+        #e.g., time python ../scripts/bloc_change.py --max-users=500 --change-mean=0.61 --change-stddev=0.30 --change-zscore-threshold=1.3 --bc-keep-bloc-segments --bc-bloc-alphabets action --add-pauses --bloc-model=word --tweets-path=/scratch/anwala/IU/BLOC/bloc-intro-paper/info-ops-driver-v-control/YYYY_MM/ --task info_ops_study 2021_12/MX_0621_YYYY/MX_0621_2020/driver_tweets.csv.gz
         info_ops_study(args, bloc_model, gen_bloc_params)
         return
 
